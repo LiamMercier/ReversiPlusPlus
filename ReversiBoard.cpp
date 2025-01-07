@@ -7,7 +7,6 @@
 #define BOARD_DIMENSION 8
 #define BOARD_AREA 64
 
-
 void ReversiBoard::print_board() const
 {
 	for (int i = 0; i < BOARD_DIMENSION; i++)
@@ -17,7 +16,6 @@ void ReversiBoard::print_board() const
 			std::cout << +board[i * BOARD_DIMENSION + j] << " ";
 		}
 		std::cout << "\n";
-
 	}
 }
 
@@ -71,21 +69,33 @@ std::uint8_t ReversiBoard::make_move(std::uint8_t selection)
 		return 1;
 	}
 
+	// Handle the move and return the result.
+
+	return make_move_unchecked(selection);
+}
+
+// The same as make_move but without checks for input.
+//
+// This can be used for faster computation assuming all
+// inputs are from the available_moves array.
+// Otherwise, errors may occur.
+std::uint8_t ReversiBoard::make_move_unchecked(std::uint8_t selection)
+{
 	// place tile and add it to the pool of tiles to search when finding moves
 	board[selection] = player;
 	active_tiles[tiles_count] = selection;
 	tiles_count++;
 
 	// update other tiles
-		
+
 	// We should skip all this if we are not past turn 4
 	if (current_turn < 4)
 	{
 		current_turn++;
 		player = (player % 2) + 1;
-		return 1;
+		return 0;
 	}
-		
+
 	// To flip tiles, we must search in all 8 directions.
 	for (int i = 0; i < 8; i++)
 	{
@@ -98,7 +108,7 @@ std::uint8_t ReversiBoard::make_move(std::uint8_t selection)
 			// take a step in the current direction
 			current_tile += step;
 
-			std::cout << "FOREWARD STEP OF SIZE: " << +step <<  " TILE IS AT : " << +current_tile << "\n";
+			// std::cout << "FOREWARD STEP OF SIZE: " << +step <<  " TILE IS AT : " << +current_tile << "\n";
 
 			// if this location is out of bounds, stop searching
 			if (current_tile >= BOARD_AREA)
@@ -123,7 +133,7 @@ std::uint8_t ReversiBoard::make_move(std::uint8_t selection)
 			{
 				while (current_tile != selection)
 				{
-					std::cout << "BACK STEP OF SIZE: " << +step << " TILE IS AT: " << +current_tile << "\n";
+					//std::cout << "BACK STEP OF SIZE: " << +step << " TILE IS AT: " << +current_tile << "\n";
 					current_tile -= step;
 					board[current_tile] = player;
 				}
@@ -135,16 +145,6 @@ std::uint8_t ReversiBoard::make_move(std::uint8_t selection)
 
 	current_turn++;
 	player = (player % 2) + 1;
-	return 0;
-}
-
-// The same as make_move but without checks for input.
-//
-// This can be used for faster computation assuming all
-// inputs are from the available_moves array.
-// Otherwise, errors may occur.
-std::uint8_t ReversiBoard::make_move_unchecked(std::uint8_t selection)
-{
 	return 0;
 }
 
@@ -253,41 +253,137 @@ void ReversiBoard::compute_available_moves()
 }
 
 
-	// board contains the current state of the reversi game
-	std::uint8_t board[BOARD_AREA]{};
-	std::uint8_t current_turn = 0;
-	std::uint8_t player = 1;
+// Used to get the number of moves. Should not be called before
+// moves are found.
+std::uint8_t ReversiBoard::number_of_moves() const
+{
+	return num_moves;
+}
 
-	// active_tiles contains tiles currently in play
-	std::uint8_t active_tiles[BOARD_AREA]{};
-	std::uint8_t tiles_count = 0;
+Score ReversiBoard::score_game() const
+{
+	Score final_score;
+	for (int i = 0; i < BOARD_AREA; i++)
+	{
+		if (board[i] == 1)
+		{
+			final_score.player1 += 1;
+			continue;
+		}
+		if (board[i] == 2)
+		{
+			final_score.player2 += 1;
+			continue;
+		}
+	}
+	return final_score;
+}
 
-	// available_moves holds the valid moves for the current player
-	// num_moves allows us to avoid clearing the whole array each time we search.
-	std::uint8_t available_moves[BOARD_AREA];
-	std::uint8_t num_moves = 0;
+// Start a reversi game on this board with a standard opening.
+// The peices will be placed in an alternating fashion.
+//
+// This setup uses the standard output and input.
+Score ReversiBoard::standard_setup_terminal()
+{
+	// Setup the initial game board.
+	make_move_unchecked(27);
+	make_move_unchecked(28);
+	make_move_unchecked(36);
+	make_move_unchecked(35);
 
-	// Static lookup table for first 4 moves
-	//
-	// The top left tile is (BOARD_DIMENSION/2) - 1 tiles down, (BOARD_DIMENSION/2)-1 tiles right
-	// The top right tile is one to the right of that
-	// The bottom left tile is BOARD_DIMENSION/2 tiles down, (BOARD_DIMENSION/2) - 1 tiles right
-	// The bottom right tile is one to the right of that
-	//
-	// Simplified, if BOARD_DIMENSION is B
-	//
-	// Top Left = (B^2 - B)/2 - 1
-	// Top Right = (B^2 - B)/2
-	// Bottom Left = (B^2 + B)/2 - 1
-	// Bottom Right = (B^2 + B)/2
-	constexpr std::uint8_t ReversiBoard::initial_moves[4]{ (BOARD_DIMENSION * BOARD_DIMENSION - BOARD_DIMENSION) / 2 - 1, (BOARD_DIMENSION * BOARD_DIMENSION - BOARD_DIMENSION) / 2,
-													(BOARD_DIMENSION * BOARD_DIMENSION + BOARD_DIMENSION) / 2 - 1, (BOARD_DIMENSION * BOARD_DIMENSION + BOARD_DIMENSION) / 2 };
+	Score game_result = score_game();
+
+	return game_result;
+}
+
+// Start a reversi game on this board with the classical opening.
+// The first 4 moves are not predetermined.
+//
+// This setup uses the standard output and input.
+Score ReversiBoard::classical_setup_terminal()
+{
+	// Each turn we need to:
+	// - Update available moves
+	// - Check termination conditions
+	// - Print the board to the screen
+	// - List the moves available
+	// - Get user input
+	// - Make the move
+	while (true)
+	{
+		compute_available_moves();
+
+		// Terminate when no more moves can occur
+		// for the current player.
+		//
+		// Reversi does not implement passes.
+		if (num_moves == 0)
+		{
+			break;
+		}
+
+		print_board();
+		print_moves();
 
 
-	// Static lookup table for directions
-	//
-	// The first element is the direction for north-west, the rest are filled in clockwise.
-	constexpr std::int8_t ReversiBoard::directions[8]{ -BOARD_DIMENSION - 1, -BOARD_DIMENSION, -BOARD_DIMENSION + 1,
+		// Get input
+		while (true)
+		{
+			int move;
+
+			std::cout << "Move for player " << +player << ": ";
+			std::cin >> move;
+
+			if (std::cin.fail())
+			{
+				std::cin.clear();
+				std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+				std::cout << "Input is invalid" << std::endl;
+			}
+
+			// If input is good, proceed
+
+			std::uint8_t valid = make_move(move);
+
+			// If move was good, exit and finish turn
+			if (valid == 0)
+			{
+				break;
+			}
+			else
+			{
+				std::cout << "Invalid move: " << move << std::endl;
+			}
+		}
+	}
+
+	print_board();
+	Score game_result = score_game();
+
+	return game_result;
+}
+
+
+// Static lookup table for first 4 moves
+//
+// The top left tile is (BOARD_DIMENSION/2) - 1 tiles down, (BOARD_DIMENSION/2)-1 tiles right
+// The top right tile is one to the right of that
+// The bottom left tile is BOARD_DIMENSION/2 tiles down, (BOARD_DIMENSION/2) - 1 tiles right
+// The bottom right tile is one to the right of that
+//
+// Simplified, if BOARD_DIMENSION is B
+//
+// Top Left = (B^2 - B)/2 - 1
+// Top Right = (B^2 - B)/2
+// Bottom Left = (B^2 + B)/2 - 1
+// Bottom Right = (B^2 + B)/2
+constexpr std::uint8_t ReversiBoard::initial_moves[4]{ (BOARD_DIMENSION * BOARD_DIMENSION - BOARD_DIMENSION) / 2 - 1, (BOARD_DIMENSION * BOARD_DIMENSION - BOARD_DIMENSION) / 2,
+												(BOARD_DIMENSION * BOARD_DIMENSION + BOARD_DIMENSION) / 2 - 1, (BOARD_DIMENSION * BOARD_DIMENSION + BOARD_DIMENSION) / 2 };
+
+// Static lookup table for directions
+//
+// The first element is the direction for north-west, the rest are filled in clockwise.
+constexpr std::int8_t ReversiBoard::directions[8]{ -BOARD_DIMENSION - 1, -BOARD_DIMENSION, -BOARD_DIMENSION + 1,
 												-1,                                                        1,
 												 BOARD_DIMENSION - 1,  BOARD_DIMENSION,  BOARD_DIMENSION + 1 };
 

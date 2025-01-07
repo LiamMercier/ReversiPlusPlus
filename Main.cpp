@@ -5,6 +5,12 @@ int main()
 {
 	ReversiBoard game_board;
 
+	Score game_result = game_board.classical_setup_terminal();
+
+	std::cout << +game_result.player1 << ":" << +game_result.player2 << "\n";
+
+	return 0;
+
 	game_board.print_board();
 	game_board.compute_available_moves();
 	game_board.print_moves();
@@ -206,6 +212,10 @@ int main()
 	game_board.print_board();
 	game_board.compute_available_moves();
 	game_board.print_moves();
+
+	Score result = game_board.score_game();
+
+	std::cout << +result.player1 << ":" << +result.player2 << "\n";
 
 	return 0;
 }
