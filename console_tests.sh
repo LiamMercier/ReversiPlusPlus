@@ -1,1 +1,2 @@
-./builds/ReversiPlusPlus < tests/standard_console_early.txt
+./builds/Reversi -s classical -p plain < tests/classical_console_early.txt
+printf "\n"
