@@ -1,12 +1,13 @@
 #ifndef REVERSI_BOARD_H
 #define REVERSI_BOARD_H
 
-// Included headers
+// Included headers.
 #include <iostream>
 #include <cstdint>
 #include <limits>
+#include <string>
 
-// Defined constants
+// Defined constants.
 #define BOARD_DIMENSION 8
 #define BOARD_AREA 64
 
@@ -22,6 +23,8 @@ public:
 
 	void print_board() const;
 
+	void color_print_board() const;
+
 	void print_moves() const;
 
 	void print_active() const;
@@ -32,13 +35,17 @@ public:
 
 	void compute_available_moves();
 
+	bool is_valid_move(std::uint8_t selection) const;
+
 	std::uint8_t number_of_moves() const;
 
 	Score score_game() const;
 
-	Score standard_setup_terminal();
+	Score standard_setup_terminal(void (ReversiBoard::*printing_function)() const);
 
-	Score classical_setup_terminal();
+	Score classical_setup_terminal(void (ReversiBoard::*printing_function)() const);
+
+	void reset_board();
 
 private:
 	std::uint8_t board[BOARD_AREA]{};
