@@ -12,7 +12,11 @@ Simply go to the build directory and call CMake.
 
 `cmake .. && cmake --build .`
 
-It is assumed that the standard library is available for compilation.
+It is assumed that the standard library, cmake, and a c++11 compatible compiler are available for compilation. If you do not have these, on systems compatible with apt you can run:
+
+`sudo apt install cmake g++`
+
+Or you can download these in the same way you would normally.
 
 ## Options
 
@@ -47,3 +51,11 @@ The main.cpp file is simple code to get user input from the console and set diff
 If you are working with a known dataset of games, calls to make_move_unchecked will work faster with the same result as long as the moves are known to be valid beforehand.
 
 Finally, compute_available_moves will find all valid moves, but duplicate detection is not implemented (unnecessary performance cost). Therefore, the array of available moves may often contain duplicates when printed to the screen. If needed, do duplicate detection on the array before using the values.
+
+# Test cases
+
+There are a few test cases available. More can be made by creating a valid move sequence and putting it in a text file.
+
+To see the results without each print statement, run
+
+`./console_tests.sh | grep " : "`
