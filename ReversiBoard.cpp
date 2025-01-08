@@ -146,8 +146,42 @@ std::uint8_t ReversiBoard::make_move_unchecked(std::uint8_t selection)
 
 		while (true)
 		{
+			// We need to ensure we don't move more than
+			// one column at a time, because this would be going
+			// out of bounds.
+			uint8_t row_prev = current_tile % 8;
+
 			// Take a step in the current direction.
 			current_tile += step;
+
+			uint8_t row = current_tile % 8;
+
+			// If step would lead us outside the grid, break
+			//
+			// Here is an example if you are not convinced that this works.
+			//
+			// N is the current location, X is N + step (north west)
+			//
+			// 0 0 0 0 0 0 0 0
+			// 0 0 0 0 0 0 0 0
+			// X 0 0 0 0 0 0 0
+			// 0 0 0 0 0 0 0 N
+			// 0 0 0 0 0 0 0 0
+			// 0 0 0 0 0 0 0 0
+			// 0 0 0 0 0 0 0 0
+			// 0 0 0 0 0 0 0 0
+			//
+			// Then:
+			// N % 8 = 7
+			// X % 8 = 0
+			//
+			// Thus we detect the collision. You can do this for any
+			// step choice (except 8,-8 which are covered after this).
+
+			if (row - row_prev > 1 || row_prev - row > 1 )
+			{
+				break;
+			}
 
 			// std::cout << "FOREWARD STEP OF SIZE: " << +step <<  " TILE IS AT : " << +current_tile << "\n";
 
@@ -245,8 +279,21 @@ void ReversiBoard::compute_available_moves()
 
 			while (true)
 			{
+				// We need to ensure we don't move more than
+				// one column at a time, because this would be going
+				// out of bounds.
+				uint8_t row_prev = current_tile % 8;
+
 				// Take a step in the current direction.
 				current_tile += step;
+
+				uint8_t row = current_tile % 8;
+
+				// If step would lead us outside the grid, break
+				if (row - row_prev > 1 || row_prev - row > 1 )
+				{
+					break;
+				}
 
 				// If this location is out of bounds, stop searching.
 				if (current_tile >= BOARD_AREA)
